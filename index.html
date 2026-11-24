@@ -750,5 +750,38 @@ function loadExample() {
 
 renderAll();
 </script>
+<!-- Mobile fix: custom buy-in ✓ button + save on tap-away -->
+<style>
+.ok{flex:none;border:0;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center;font-size:13px;font-weight:800;padding:0}
+@media (pointer:coarse){.custom{font-size:16px;width:88px;height:30px}.ok{width:30px;height:30px}.money input,.in{font-size:16px}}
+</style>
+<script>
+(() => {
+  const orig = renderPlayers;
+  renderPlayers = function () {
+    orig();
+    const c = document.querySelector('#playersBody .custom');
+    if (c) { c.setAttribute('enterkeyhint', 'done'); c.insertAdjacentHTML('afterend', '<button class="ok" type="button" aria-label="Add buy-in">✓</button>'); }
+  };
+  function finish(input, save) {
+    if (!input || input.dataset.done) return;
+    input.dataset.done = '1';
+    const p = findP(input), v = save ? toCents(input.value) : null;
+    ui.customFor = null;
+    if (p && v > 0) { addBuyIn(p, v); commit(); } else renderPlayers();
+  }
+  const isCustom = (el) => el && el.classList && el.classList.contains('custom');
+  ['pointerdown', 'mousedown'].forEach((t) => document.addEventListener(t, (e) => { if (e.target.closest && e.target.closest('.ok')) e.preventDefault(); }, true));
+  document.addEventListener('focusout', (e) => { if (isCustom(e.target)) { e.stopPropagation(); finish(e.target, true); } }, true);
+  document.addEventListener('keydown', (e) => {
+    if (!isCustom(e.target) || (e.key !== 'Enter' && e.key !== 'Escape')) return;
+    e.stopPropagation(); e.preventDefault(); finish(e.target, e.key === 'Enter');
+  }, true);
+  document.addEventListener('click', (e) => {
+    const ok = e.target.closest && e.target.closest('.ok'); if (!ok) return;
+    e.stopPropagation(); finish(ok.parentElement.querySelector('.custom'), true);
+  }, true);
+})();
+</script>
 </body>
 </html>
